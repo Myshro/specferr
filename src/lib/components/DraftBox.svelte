@@ -13,8 +13,7 @@ import PokemonPreview from "./PokemonPreview.svelte";
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="container" 
-on:mouseenter={() => isHovered = true} on:mouseleave={() => isHovered = false}>
+<div class="container">
     <h1>{teamName}</h1>
     {#each selectedMons as mon}
         <div>

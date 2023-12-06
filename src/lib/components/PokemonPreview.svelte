@@ -9,10 +9,16 @@
     export let pushDraftedMon2;
     export let removeMon = undefined;
     export let drafted = false;
+    export let disableName = false;
+
+    const smogonUrl = "https://www.smogon.com/dex/sm/pokemon/"
+    
 </script>
 
 <div class="container" class:red={drafted}>
-    <div id="name">{name}</div>
+    {#if !disableName}
+      <a target="_blank" href={`${smogonUrl}${name}`} id="name">{name}</a  >
+    {/if}
     <img src="{sprite}" alt="Sprite of {name}">
     <span class="stats">
         {#each stats as stat}
@@ -38,11 +44,11 @@
 
 <style>
   * {
-    font-size: 0.8rem;
+    font-size: 0.6rem;
   }
 
   #name {
-    min-width: 7.5rem;
+    min-width: 5.5rem;
     overflow-wrap: break-word;
   }
 
@@ -52,17 +58,17 @@
     justify-content: left;
     align-items: center;
     padding: 0.25rem;
+    gap: 1rem;
   }
 
-  .stats,
-  .types {
+  .stats {
     display: flex;
-    gap: 1.5rem;
-    border: 1px solid red; /* Adjust border color as needed */
+    gap: 0.5rem;
+    /* border: 1px solid red; Adjust border color as needed */
   }
 
-  p {
-    font-size: 0.65rem;
+  .stats > div {
+    /* border: 1px solid red; */
   }
 
   button:hover {
@@ -85,5 +91,10 @@
 
   .blue {
     background-color: rgb(140, 186, 255);
+  }
+
+  a {
+    text-decoration: none;
+    color: black;
   }
 </style>

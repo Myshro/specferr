@@ -116,6 +116,7 @@ const filters = {
     move: null,
     type: null,
     stat: null,
+    name: null,
 }
 
 const createUrl = (endpoint, target) => {
@@ -248,14 +249,29 @@ const clearFiltered = () => {
 const applyFilters = async () => {
     let result;
     clearFiltered();
+
+    const catchError = (e, filterPath) => {
+        printError(e);
+        errorThrown = true;
+        invalidInputs.push(filters[filterPath]);
+    }
+
     if (filters.type !== null) {
-        result = await fetchDetail(ENDPOINT.TYPE, filters.type);
-        pushTypeFilter(result);
+        try {
+            result = await fetchDetail(ENDPOINT.TYPE, filters.type);
+            pushTypeFilter(result);
+        } catch (error) {
+            catchError(error, "type")
+        }
     }
 
     if (filters.move !== null) {
-        result = await fetchDetail(ENDPOINT.MOVE, filters.move);
-        pushMoveFilter(result);
+        try {
+            result = await fetchDetail(ENDPOINT.MOVE, filters.move);
+            pushMoveFilter(result);
+        } catch (error) {
+            catchError(error, "move");
+        }
 
     }
     if (filters.ability !== null) {
@@ -263,22 +279,24 @@ const applyFilters = async () => {
             result = await fetchDetail(ENDPOINT.ABILITY, filters.ability);
             pushAbilityFilter(result);
         } catch (error) {
-            printError(error);
-            errorThrown = true;
-            invalidInputs.push(filters.ability);
+            catchError(error, "ability");
         }
 
     }
 
     if (filters.stat !== null) {
-        result = fetchStat(STAT.SPECIAL_DEFENSE, filters.stat);
-        pushStatFilter(result);
+        try {
+            result = fetchStat(STAT.SPECIAL_DEFENSE, filters.stat);
+            pushStatFilter(result);
+        } catch (error) {
+            catchError(error, "stat")
+        }
     }
 
     unionizePokemonNames();
 }
 
-const notNullOrEmpty = (filterType) => filterType !== null
+
 
 //-----
 
@@ -326,6 +344,7 @@ const fetchMonFromUnionData = (monName) => {
         {#if errorThrown}
             <h4>Invalid input: {invalidInputs}</h4>
         {/if}
+        <!-- <FilterBox lable={"name"} value={filters.name} bind:appliedValue={filters.name}/> -->
         {#each Object.entries(filters) as [key, val]}
             <FilterBox lable={key.substring(0, 4)} value={val} bind:appliedValue={filters[key]}/>
         {/each}

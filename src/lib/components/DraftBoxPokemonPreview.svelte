@@ -21,7 +21,7 @@ let isHovered = false;
     <div class="preview">
             <PokemonPreview 
             name={data.name} sprite={data.sprites.front_default} 
-            stats={data.stats} types={data.types} 
+            stats={data.stats} types={data.types} disableName={true}
             />
     </div>
     {/if}
@@ -35,8 +35,10 @@ let isHovered = false;
     }
 
     .preview {
-        display: inline-block;
+        /* display: inline-block; */
         /* margin-top: 2rem; */
+        opacity: 0;
+        transition: opacity 1s ease-out;
     }
 
     * {
@@ -45,9 +47,15 @@ let isHovered = false;
 
     .container {
         /* border: 1px solid black; */
-        /* display: flex; */
+        display: flex;
+        flex-direction: column;
     }
     .container:hover {
         cursor: pointer;
     }
+
+    .container:hover .preview {
+        opacity: 1;
+        transform: translateY(0);
+  }
 </style>
