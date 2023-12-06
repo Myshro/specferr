@@ -6,13 +6,12 @@
     export let value;
     export let placeholder = "...empty";
     export let appliedValue = "";
-
+    $: appliedValue = value === '' ? null : value;
     const handleSubmit = () => {
         appliedValue = value.toLowerCase();
         if (appliedValue === "") {
             appliedValue = null;
         }
-        console.log(`APPVAL: ${appliedValue}`)
     }
 </script>
 
@@ -24,13 +23,18 @@
             bind:value
         >
     </label>    
-    <button type="submit" on:click|preventDefault={handleSubmit}>Apply</button>
+    <!-- <button type="submit" on:click|preventDefault={handleSubmit}>Apply</button> -->
 </form>
 
 <style>
     .container {
         display: flex;
         border: 1px solid black;
+        width: 100%;
+    }
+
+    label {
+        font-weight: normal;
     }
 </style>
 

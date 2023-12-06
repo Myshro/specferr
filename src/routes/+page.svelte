@@ -1,9 +1,16 @@
 <script>
 // @ts-nocheck
 
+    /**
+     * - 
+     * - input multiple moves 
+     * - handle invalid input for all filters
+    */
+
 import { stats } from "$lib/stats"
 import PokemonPreview from "$lib/components/PokemonPreview.svelte";
 	import FilterBox from "$lib/components/FilterBox.svelte";
+	import DraftBox from "$lib/components/DraftBox.svelte";
 // import { filtered } from "$lib/store"
 
 /**@type Object*/
@@ -14,6 +21,40 @@ let totalPlayers = 0;
 let url = "https://pokeapi.co/api/v2/pokemon/";
 /**@type string*/
 const BASE_URL = "https://pokeapi.co/api/v2/";
+
+const TEAM_SIZE = 6;
+
+let errorThrown = false;
+let invalidInputs = [];
+
+let teamOneMonNames = [];
+let teamTwoMonNames = [];
+
+const pushNameToTeam1 = (name) => {
+    if (teamOneMonNames.length >= TEAM_SIZE || teamOneMonNames.includes(name)) return;
+    teamOneMonNames.push(name);
+    teamOneMonNames = teamOneMonNames;
+}
+
+const pushNameToTeam2 = (name) => {
+    if (teamTwoMonNames.length >= TEAM_SIZE || teamTwoMonNames.includes(name)) return;
+    teamTwoMonNames.push(name);
+    teamTwoMonNames = teamTwoMonNames;
+}
+
+const removeNameFromTeams = (name) => {
+    const index1 = teamOneMonNames.indexOf(name);
+    if (index1 !== -1) {
+        teamOneMonNames.splice(index1, 1);
+    }
+    const index2 = teamTwoMonNames.indexOf(name);
+    if (index2 !== -1) {
+        teamTwoMonNames.splice(index1, 1);
+    }
+    teamOneMonNames = teamOneMonNames;
+    teamTwoMonNames = teamTwoMonNames;
+}
+
 
 /**@type {Object} ability, move, type endpoints*/
 const ENDPOINT = {
@@ -86,9 +127,12 @@ const fetchDetail = async (endpoint, target) => {
     filters[endpoint.toLowerCase().substring(0, endpoint.length - 1)] = target;
     const link = createUrl(endpoint, target);
     try {
-        return (await fetch(link, {mode: 'cors'})).json();   
+        const r = (await fetch(link, {mode: 'cors'})).json();  
+        errorThrown = false;
+        return r; 
     } catch (error) {
         printError(error);
+        errorThrown = true;
     }
 }
 
@@ -178,7 +222,8 @@ const isEmpty = (arr) => arr.length === 0;
 
 const unionizePokemonNames = () => {
     if (noFiltersExist()) {
-        console.log("Currently no filters are set.")
+        errorThrown = true;
+        invalidInputs = "Currently no filters are set";
         return;
     }
     const firstNonEmptyValues = Object.values(filtered).find(arr => !isEmpty(arr));
@@ -190,34 +235,19 @@ const noFiltersExist = () => {
     return Object.values(filtered).every(arr => isEmpty(arr));
 }
 
-(async function() {
-    let result;
-    // result = await fetchDetail(ENDPOINT.TYPE, TYPE.DRAGON);
-    // console.log(result);
-    // pushTypeFilter(result);
-    // console.log(filtered);
-
-    result = await fetchDetail(ENDPOINT.MOVE, "tackle");
-    pushMoveFilter(result);
-
-    result = await fetchDetail(ENDPOINT.ABILITY, "sturdy");
-    pushAbilityFilter(result);
-    // result = fetchStat(STAT.SPECIAL_DEFENSE, 80);
-    // console.log(result);
-    // pushStatFilter(result);
-    // console.log(filtered);
-
-    unionizePokemonNames();
-    console.log(filtered);
-})();
-
-// this func will do all the fetching of filters
-const applyFilters = async () => {
-    let result;
+const clearFiltered = () => {
     filtered.type = [];
     filtered.move = [];
     filtered.ability = [];
     filtered.stat = [];
+    filtered.union_name = [];
+    filtered.union_data = [];
+}
+
+// this func will do all the fetching of filters
+const applyFilters = async () => {
+    let result;
+    clearFiltered();
     if (filters.type !== null) {
         result = await fetchDetail(ENDPOINT.TYPE, filters.type);
         pushTypeFilter(result);
@@ -228,10 +258,16 @@ const applyFilters = async () => {
         pushMoveFilter(result);
 
     }
-    
     if (filters.ability !== null) {
-        result = await fetchDetail(ENDPOINT.ABILITY, filters.ability);
-        pushAbilityFilter(result);
+        try {
+            result = await fetchDetail(ENDPOINT.ABILITY, filters.ability);
+            pushAbilityFilter(result);
+        } catch (error) {
+            printError(error);
+            errorThrown = true;
+            invalidInputs.push(filters.ability);
+        }
+
     }
 
     if (filters.stat !== null) {
@@ -240,7 +276,6 @@ const applyFilters = async () => {
     }
 
     unionizePokemonNames();
-    // console.log(filtered);
 }
 
 const notNullOrEmpty = (filterType) => filterType !== null
@@ -260,6 +295,7 @@ const populateUnionData = async () => {
         }
     }
     filtered.union_data = filtered.union_data; // require this for reactivity :(
+        console.log(filtered.union_data)
 }
 
 const applyFiltersAndPopulateData = async () => {
@@ -268,14 +304,36 @@ const applyFiltersAndPopulateData = async () => {
     await populateUnionData();
 }
 
+const clearFilters = () => {
+    filters.type = null;
+    filters.move = null;
+    filters.ability = null;
+    filters.stat = null;
+}
+
+const fetchMonFromUnionData = (monName) => {
+    for (let i = 0; i < filtered.union_data.length; i++) {
+        const data = filtered.union_data[i];
+        if (data.name === monName) return data;
+    }
+    return null;
+}
 
 </script>
 
-<ul class="filters">
-    {#each Object.entries(filters) as [key, val]}
-        <FilterBox lable={key} value={val} bind:appliedValue={filters[key]}/>
-    {/each}
-</ul>
+<header>
+    <ul class="filters">
+        {#if errorThrown}
+            <h4>Invalid input: {invalidInputs}</h4>
+        {/if}
+        {#each Object.entries(filters) as [key, val]}
+            <FilterBox lable={key.substring(0, 4)} value={val} bind:appliedValue={filters[key]}/>
+        {/each}
+    </ul>
+    <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"me"} selectedMons={teamOneMonNames}/>
+    <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"them"} selectedMons={teamTwoMonNames}/>
+    <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button>
+</header>
 
 <form on:submit|preventDefault={null}>
     <button type="submit" on:click|preventDefault={applyFiltersAndPopulateData}>Display</button>
@@ -287,8 +345,17 @@ const applyFiltersAndPopulateData = async () => {
     </pre> -->
     <ul>
         {#each filtered.union_data as { name, sprites, stats, types }}
-            <PokemonPreview name={name} sprite={sprites.front_default} stats={stats} types={types}/>
+            <PokemonPreview 
+            name={name} sprite={sprites.front_default} 
+            stats={stats} types={types} 
+            drafted={teamOneMonNames.includes(name) || teamTwoMonNames.includes(name)}
+            pushDraftedMon1={pushNameToTeam1} 
+            pushDraftedMon2={pushNameToTeam2}
+            removeMon={removeNameFromTeams}/>
         {/each}
+        {#if filtered.union_data.length === 0}
+            No pokemon found.
+        {/if}
     </ul>
 {:else}
 {/if}
@@ -301,6 +368,13 @@ const applyFiltersAndPopulateData = async () => {
 
     .filters {
         border: 1px solid black;
+        width: 100%;
     }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+    }
+    
 
 </style>

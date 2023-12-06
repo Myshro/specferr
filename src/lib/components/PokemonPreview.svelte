@@ -1,59 +1,89 @@
 <script>
 // @ts-nocheck
-    export let sprite;
+    export let sprite = null;
     export let name = "UNDEFINED_NAME";
-    export let stats;
+    export let stats = null;
     export let types = [];
+    /**Button functions*/
+    export let pushDraftedMon1;
+    export let pushDraftedMon2;
+    export let removeMon = undefined;
+    export let drafted = false;
 </script>
 
-<div class="container">
-    <p>{name}</p>
+<div class="container" class:red={drafted}>
+    <div id="name">{name}</div>
     <img src="{sprite}" alt="Sprite of {name}">
-    <div class="stats">
+    <span class="stats">
         {#each stats as stat}
             <div>
                 <p>{stat.stat.name}</p>
                 <p>{stat.base_stat}</p>
             </div>  
         {/each}
-    </div>
-    <div class="types">
+    </span>
+    <span class="types">
         {#each types as type}
             <div>
                 <p>{type.type.name}</p>
             </div>
         {/each}
-    </div>
-    <button id="draft">draft</button>
-    <button id="remove">remove</button>
+    </span>
+    {#if removeMon !== undefined}
+      <button on:click={() => pushDraftedMon1(name)} id="draft1">me</button>
+      <button on:click={() => pushDraftedMon2(name)} id="draft2">them</button>
+      <!-- <button on:click={() => removeMon(name)} id="remove">remove</button> -->
+    {/if}
 </div>
 
 <style>
-    .container {
-        display: flex;
-        border: 1px solid black;
-        justify-content: left;
-        align-items: center;
-    }
+  * {
+    font-size: 0.8rem;
+  }
 
-    .stats {
-        display: flex;
-        gap: 2rem;
-        border: 1px solid red;
-    }
+  #name {
+    min-width: 7.5rem;
+    overflow-wrap: break-word;
+  }
 
-    .types {
-        display: flex;
-        gap: 2rem;
-        border: 1px solid blue;
-    }
+   .container {
+    display: flex;
+    border: 1px solid black;
+    justify-content: left;
+    align-items: center;
+    padding: 0.25rem;
+  }
 
-    button:hover {
-        cursor: pointer;
-    }
+  .stats,
+  .types {
+    display: flex;
+    gap: 1.5rem;
+    border: 1px solid red; /* Adjust border color as needed */
+  }
 
-    img {
-        width: 4rem;
-        height: 4rem;
-    }
+  p {
+    font-size: 0.65rem;
+  }
+
+  button:hover {
+    cursor: pointer;
+  }
+
+  img {
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid black;
+  }
+
+  p {
+    max-width: 10rem;
+  }
+
+  .red {
+    background-color: rgb(255, 165, 165);
+  }
+
+  .blue {
+    background-color: rgb(140, 186, 255);
+  }
 </style>
