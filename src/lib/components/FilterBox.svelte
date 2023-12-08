@@ -3,10 +3,22 @@
 
     export let lable;
     /**@type string*/
-    export let value;
-    export let placeholder = "...empty";
+    let value;
     export let appliedValue = "";
-    $: appliedValue = value === '' ? null : value;
+    export let placeholder = "...empty";
+    $: {
+        appliedValue = processString(value);
+        console.log(appliedValue)
+    }
+
+    const processString = (inputString) => {
+        if (inputString === null || typeof inputString !== 'string') return null;
+        if (inputString === '') return null;
+        const stringWithoutSpaces = inputString.replace(/\s/g, '');
+        const resultArray = stringWithoutSpaces.split(',').filter(item => item.trim() !== '');
+        return resultArray;
+    }
+
     const handleSubmit = () => {
         appliedValue = value.toLowerCase();
         if (appliedValue === "") {
@@ -23,7 +35,6 @@
             bind:value
         >
     </label>    
-    <!-- <button type="submit" on:click|preventDefault={handleSubmit}>Apply</button> -->
 </form>
 
 <style>

@@ -95,8 +95,10 @@ const STAT = {
 
 const STAT_DATA = stats;
 
-/**@type Object*/
-const filtered = {
+/**@type Object
+ * Contains actual pokemon 
+*/
+let filtered = {
     /**@type Array*/
     ability: [],
     /**@type Array*/
@@ -111,6 +113,9 @@ const filtered = {
     union_data: [],
 };
 
+/**
+ * Contains the filters that will be used to populate filtered
+ */
 const filters = {
     ability: null,
     move: null,
@@ -123,7 +128,7 @@ const createUrl = (endpoint, target) => {
     return `${BASE_URL}${endpoint}${target}`;
 }
 
-// ability, move, type use this func
+// ability, move, type use this func to fetch data from the api
 const fetchDetail = async (endpoint, target) => {
     filters[endpoint.toLowerCase().substring(0, endpoint.length - 1)] = target;
     const link = createUrl(endpoint, target);
@@ -140,16 +145,109 @@ const fetchDetail = async (endpoint, target) => {
 // stat filter is quirky, gets its own func
 const fetchStat = (attribute, min) => {
     const s = STAT_DATA.filter(p => {
-        // console.log(`${p.name}: ${attribute}: ${p[attribute]}`)
         return p[attribute] >= min;
     });
-    console.log(s)
     return s;
 }
 
 const printError = (error) => console.log(`FATAL ERROR:\n${error}`);
 
 const fmt = (json) => JSON.stringify(json, null ,4);
+
+// const pushTypeFilter = (result) => {
+//     const tf = filtered.type;
+//     result.pokemon.map(p => {
+//         if (!isInFiltered(tf, p.pokemon.name)) {
+//             tf.push(p.pokemon.name);
+//         }
+//     })
+// }
+
+// const pushMoveFilter = (result) => {
+//     const mf = filtered.move;
+//     result.learned_by_pokemon.map(p => {
+//         if (!isInFiltered(mf, p.name)) {
+//             mf.push(p.name);
+//         }
+//     })
+// } 
+
+// const pushAbilityFilter = (result) => {
+//     const af = filtered.ability;
+//     result.pokemon.map(p => {
+//         if (!isInFiltered(af, p.pokemon.name)) {
+//             af.push(p.pokemon.name);
+//         }
+//     })
+// }
+
+// const pushStatFilter = (result) => {
+//     const sf = filtered.stat;
+//     result.map(p => {
+//         if (!isInFiltered(sf, p.name)) {
+//             sf.push(p.name);
+//         }
+//     })
+// }
+
+// const pushFilter = (result, filterType, propertyName) => {
+//     const filterList = filtered[filterType];
+//     result.map(item => {
+//         const itemName = item[propertyName];
+//         if (!isInFiltered(filterList, itemName)) {
+//             filterList.push(itemName);
+//         }
+//     });
+// };
+
+// Example usage:
+
+
+
+// used to make sure dont push same pokemon into the same filtered.X
+const isInFiltered = (specification, name) => {
+    return specification.includes(name);
+}
+
+const isSharedInFiltered = (pokemonName) => {
+    return (
+        (isEmpty(filtered.ability) || filtered.ability.includes(pokemonName)) &&
+        (isEmpty(filtered.move)    || filtered.move.includes(pokemonName)) &&
+        (isEmpty(filtered.type)    || filtered.type.includes(pokemonName)) &&
+        (isEmpty(filtered.stat)    || filtered.stat.includes(pokemonName))
+    );
+    // return filtered.ability.includes(pokemonName) &&
+    //        filtered.move.includes(pokemonName) &&
+    //        filtered.type.includes(pokemonName) //&&
+    //     //    filtered.stat.includes(pokemonName);
+}
+
+const isEmpty = (arr) => arr.length === 0;
+
+const unionizePokemonNames = () => {
+    if (isEmptyFiltered()) {
+        errorThrown = true;
+        invalidInputs = "Currently no filters are set";
+        return;
+    }
+    const firstNonEmptyFiltered = Object.values(filtered).find(arr => !isEmpty(arr));
+
+    filtered.union_name = firstNonEmptyFiltered.filter(isSharedInFiltered);
+    console.log(filtered.union_name);
+}
+
+const isEmptyFiltered = () => {
+    return Object.values(filtered).every(arr => isEmpty(arr));
+}
+
+const clearFiltered = () => {
+    filtered.type = [];
+    filtered.move = [];
+    filtered.ability = [];
+    filtered.stat = [];
+    filtered.union_name = [];
+    filtered.union_data = [];
+}
 
 const pushTypeFilter = (result) => {
     const tf = filtered.type;
@@ -158,6 +256,7 @@ const pushTypeFilter = (result) => {
             tf.push(p.pokemon.name);
         }
     })
+    
 }
 
 const pushMoveFilter = (result) => {
@@ -187,63 +286,37 @@ const pushStatFilter = (result) => {
     })
 }
 
-const pushFilter = (result, filterType, propertyName) => {
-    const filterList = filtered[filterType];
-    result.map(item => {
-        const itemName = item[propertyName];
-        if (!isInFiltered(filterList, itemName)) {
-            filterList.push(itemName);
+Object.byString = function(o, s) {
+    s = s.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+    s = s.replace(/^\./, '');           // strip a leading dot
+    var a = s.split('.');
+    for (var i = 0, n = a.length; i < n; ++i) {
+        var k = a[i];
+        if (k in o) {
+            o = o[k];
+        } else {
+            return;
         }
+    }
+    return o;
+}
+
+const pushFilter = (result, filteredTarget, propertyName, pathToName) => {
+    let tempList = [];
+    result[propertyName].map(mon => {
+        tempList.push(Object.byString(mon, pathToName));
     });
-};
-
-// Example usage:
-
-
-
-// used to make sure dont push same pokemon into the same filtered.X
-const isInFiltered = (specification, name) => {
-    return specification.includes(name);
-}
-
-const isSharedInFiltered = (pokemonName) => {
-    return (
-        (isEmpty(filtered.ability) || filtered.ability.includes(pokemonName)) &&
-        (isEmpty(filtered.move)    || filtered.move.includes(pokemonName)) &&
-        (isEmpty(filtered.type)    || filtered.type.includes(pokemonName)) &&
-        (isEmpty(filtered.stat)    || filtered.stat.includes(pokemonName))
-    );
-    // return filtered.ability.includes(pokemonName) &&
-    //        filtered.move.includes(pokemonName) &&
-    //        filtered.type.includes(pokemonName) //&&
-    //     //    filtered.stat.includes(pokemonName);
-}
-
-const isEmpty = (arr) => arr.length === 0;
-
-const unionizePokemonNames = () => {
-    if (noFiltersExist()) {
-        errorThrown = true;
-        invalidInputs = "Currently no filters are set";
+    console.log("2)")
+    if (filteredTarget.length === 0) {
+        filteredTarget.splice(0, filteredTarget.length, ...tempList); // modify the original array
+        console.log(filteredTarget)
         return;
     }
-    const firstNonEmptyValues = Object.values(filtered).find(arr => !isEmpty(arr));
+    const temp = tempList.filter(e => filteredTarget.includes(e));
+    filteredTarget.splice(0, filteredTarget.length, ...temp);
+    console.log(filteredTarget);
+};
 
-    filtered.union_name = firstNonEmptyValues.filter(isSharedInFiltered);
-}
-
-const noFiltersExist = () => {
-    return Object.values(filtered).every(arr => isEmpty(arr));
-}
-
-const clearFiltered = () => {
-    filtered.type = [];
-    filtered.move = [];
-    filtered.ability = [];
-    filtered.stat = [];
-    filtered.union_name = [];
-    filtered.union_data = [];
-}
 
 // this func will do all the fetching of filters
 const applyFilters = async () => {
@@ -256,33 +329,58 @@ const applyFilters = async () => {
         invalidInputs.push(filters[filterPath]);
     }
 
-    if (filters.type !== null) {
-        try {
-            result = await fetchDetail(ENDPOINT.TYPE, filters.type);
-            pushTypeFilter(result);
-        } catch (error) {
-            catchError(error, "type")
+    const tryFilterFetch = async (filterType, endpoint, filteredTarget, propertyName, pathToName) => {
+        if (filterType !== null) {
+            try {
+                for (let i = 0; i < filterType.length; i++) {
+                    const criteria = filterType[i];
+                    result = await fetchDetail(endpoint, criteria);
+                    pushFilter(result, filteredTarget, propertyName, pathToName);
+                }
+                // result = await fetchDetail(ENDPOINT.TYPE, filters.type);
+                // pushTypeFilter(result);
+            } catch (error) {
+                catchError(error, "type")
+            }
         }
     }
 
-    if (filters.move !== null) {
-        try {
-            result = await fetchDetail(ENDPOINT.MOVE, filters.move);
-            pushMoveFilter(result);
-        } catch (error) {
-            catchError(error, "move");
-        }
+    await tryFilterFetch(filters.ability, ENDPOINT.ABILITY, filtered.ability, "pokemon", "pokemon.name");
+    await tryFilterFetch(filters.type, ENDPOINT.TYPE, filtered.type, "pokemon", "pokemon.name");
+    await tryFilterFetch(filters.move, ENDPOINT.MOVE, filtered.move, "learned_by_pokemon", "name");
 
-    }
-    if (filters.ability !== null) {
-        try {
-            result = await fetchDetail(ENDPOINT.ABILITY, filters.ability);
-            pushAbilityFilter(result);
-        } catch (error) {
-            catchError(error, "ability");
-        }
+    // if (filters.type !== null) {
+    //     try {
+    //         for (let i = 0; i < filters.type.length; i++) {
+    //             const criteria = filters.type[i];
+    //             result = await fetchDetail(ENDPOINT.TYPE, criteria);
+    //             pushFilter(result, filters.type, "pokemon", "p.name");
+    //         }
+    //         // result = await fetchDetail(ENDPOINT.TYPE, filters.type);
+    //         // pushTypeFilter(result);
+    //     } catch (error) {
+    //         catchError(error, "type")
+    //     }
+    // }
 
-    }
+    // if (filters.move !== null) {
+    //     try {
+    //         result = await fetchDetail(ENDPOINT.MOVE, filters.move);
+    //         pushMoveFilter(result);
+    //     } catch (error) {
+    //         catchError(error, "move");
+    //     }
+
+    // }
+    // if (filters.ability !== null) {
+    //     try {
+    //         result = await fetchDetail(ENDPOINT.ABILITY, filters.ability);
+    //         pushAbilityFilter(result);
+    //     } catch (error) {
+    //         catchError(error, "ability");
+    //     }
+
+    // }
 
     if (filters.stat !== null) {
         try {
@@ -317,9 +415,10 @@ const populateUnionData = async () => {
 }
 
 const applyFiltersAndPopulateData = async () => {
-    console.log(filters);
     await applyFilters()
     await populateUnionData();
+    console.log(filters)
+    console.log(filtered)
 }
 
 const clearFilters = () => {
@@ -327,6 +426,7 @@ const clearFilters = () => {
     filters.move = null;
     filters.ability = null;
     filters.stat = null;
+    console.log(filters)
 }
 
 const fetchMonFromUnionData = (monName) => {
@@ -342,16 +442,19 @@ const fetchMonFromUnionData = (monName) => {
 <header>
     <ul class="filters">
         {#if errorThrown}
-            <h4>Invalid input: {invalidInputs}</h4>
+            <h4>Invalid input</h4>
         {/if}
         <!-- <FilterBox lable={"name"} value={filters.name} bind:appliedValue={filters.name}/> -->
         {#each Object.entries(filters) as [key, val]}
-            <FilterBox lable={key.substring(0, 4)} value={val} bind:appliedValue={filters[key]}/>
+            <!-- <FilterBox lable={key.substring(0, 4)} value={val} bind:appliedValue={filters[key]}/> -->
+            <FilterBox lable={key.substring(0, 4)} bind:appliedValue={filters[key]}/>
+            <!-- <FilterBox lable={key.substring(0, 4)} value={val}/> -->
         {/each}
+        <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button>
     </ul>
     <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"me"} selectedMons={teamOneMonNames}/>
     <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"them"} selectedMons={teamTwoMonNames}/>
-    <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button>
+    
 </header>
 
 <form on:submit|preventDefault={null}>
@@ -373,7 +476,7 @@ const fetchMonFromUnionData = (monName) => {
             removeMon={removeNameFromTeams}/>
         {/each}
         {#if filtered.union_data.length === 0}
-            No pokemon found.
+            No pokemon found / Loading.
         {/if}
     </ul>
 {:else}
