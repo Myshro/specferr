@@ -30,6 +30,8 @@ let invalidInputs = [];
 let teamOneMonNames = [];
 let teamTwoMonNames = [];
 
+let currentStat;
+
 const pushNameToTeam1 = (name) => {
     if (teamOneMonNames.length >= TEAM_SIZE || teamOneMonNames.includes(name)) return;
     teamOneMonNames.push(name);
@@ -152,8 +154,6 @@ const fetchStat = (attribute, min) => {
 
 const printError = (error) => console.log(`FATAL ERROR:\n${error}`);
 
-const fmt = (json) => JSON.stringify(json, null ,4);
-
 // const pushTypeFilter = (result) => {
 //     const tf = filtered.type;
 //     result.pokemon.map(p => {
@@ -249,33 +249,33 @@ const clearFiltered = () => {
     filtered.union_data = [];
 }
 
-const pushTypeFilter = (result) => {
-    const tf = filtered.type;
-    result.pokemon.map(p => {
-        if (!isInFiltered(tf, p.pokemon.name)) {
-            tf.push(p.pokemon.name);
-        }
-    })
+// const pushTypeFilter = (result) => {
+//     const tf = filtered.type;
+//     result.pokemon.map(p => {
+//         if (!isInFiltered(tf, p.pokemon.name)) {
+//             tf.push(p.pokemon.name);
+//         }
+//     })
     
-}
+// }
 
-const pushMoveFilter = (result) => {
-    const mf = filtered.move;
-    result.learned_by_pokemon.map(p => {
-        if (!isInFiltered(mf, p.name)) {
-            mf.push(p.name);
-        }
-    })
-} 
+// const pushMoveFilter = (result) => {
+//     const mf = filtered.move;
+//     result.learned_by_pokemon.map(p => {
+//         if (!isInFiltered(mf, p.name)) {
+//             mf.push(p.name);
+//         }
+//     })
+// } 
 
-const pushAbilityFilter = (result) => {
-    const af = filtered.ability;
-    result.pokemon.map(p => {
-        if (!isInFiltered(af, p.pokemon.name)) {
-            af.push(p.pokemon.name);
-        }
-    })
-}
+// const pushAbilityFilter = (result) => {
+//     const af = filtered.ability;
+//     result.pokemon.map(p => {
+//         if (!isInFiltered(af, p.pokemon.name)) {
+//             af.push(p.pokemon.name);
+//         }
+//     })
+// }
 
 const pushStatFilter = (result) => {
     const sf = filtered.stat;
@@ -345,6 +345,10 @@ const applyFilters = async () => {
         }
     }
 
+    if (filters.name !== null) {
+        // idkman
+    }
+
     await tryFilterFetch(filters.ability, ENDPOINT.ABILITY, filtered.ability, "pokemon", "pokemon.name");
     await tryFilterFetch(filters.type, ENDPOINT.TYPE, filtered.type, "pokemon", "pokemon.name");
     await tryFilterFetch(filters.move, ENDPOINT.MOVE, filtered.move, "learned_by_pokemon", "name");
@@ -384,7 +388,7 @@ const applyFilters = async () => {
 
     if (filters.stat !== null) {
         try {
-            result = fetchStat(STAT.SPECIAL_DEFENSE, filters.stat);
+            result = fetchStat(currentStat, filters.stat);
             pushStatFilter(result);
         } catch (error) {
             catchError(error, "stat")
@@ -439,6 +443,7 @@ const fetchMonFromUnionData = (monName) => {
 
 </script>
 
+
 <header>
     <ul class="filters">
         {#if errorThrown}
@@ -450,6 +455,13 @@ const fetchMonFromUnionData = (monName) => {
             <FilterBox lable={key.substring(0, 4)} bind:appliedValue={filters[key]}/>
             <!-- <FilterBox lable={key.substring(0, 4)} value={val}/> -->
         {/each}
+        <label for="flavor">stat:</label>
+    <select id="flavor" name="flavor" bind:value={currentStat} on:change={(event) => currentStat = event.target.value}>
+        {#each Object.entries(STAT) as [key, val]}
+            <option value={val}>{val}</option>
+        {/each}
+        <!-- Add more options as needed -->
+    </select>
         <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button>
     </ul>
     <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"me"} selectedMons={teamOneMonNames}/>
@@ -491,11 +503,13 @@ const fetchMonFromUnionData = (monName) => {
     .filters {
         border: 1px solid black;
         width: 100%;
+        padding: 1rem 1rem 1rem 1rem;
     }
 
     header {
         display: flex;
         justify-content: space-between;
+        
     }
     
 

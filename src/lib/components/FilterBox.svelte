@@ -5,7 +5,29 @@
     /**@type string*/
     let value;
     export let appliedValue = "";
-    export let placeholder = "...empty";
+    export let placeholder = "";
+    switch (lable) {
+        case "abil": {
+            placeholder = "intimidate";
+            break;
+        }
+        case "move": {
+            placeholder = "toxic-spikes";
+            break;
+        }
+        case "type": {
+            placeholder = "fire";
+            break;
+        }
+        case "stat": {
+            placeholder = "70";
+            break;
+        }
+        case "name": {
+            placeholder = "pikachu";
+            break;
+        }
+    }
     $: {
         appliedValue = processString(value);
         console.log(appliedValue)
