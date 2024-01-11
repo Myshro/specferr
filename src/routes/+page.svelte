@@ -9,8 +9,8 @@
 
 import { stats } from "$lib/stats"
 import PokemonPreview from "$lib/components/PokemonPreview.svelte";
-	import FilterBox from "$lib/components/FilterBox.svelte";
-	import DraftBox from "$lib/components/DraftBox.svelte";
+import FilterBox from "$lib/components/FilterBox.svelte";
+import DraftBox from "$lib/components/DraftBox.svelte";
 // import { filtered } from "$lib/store"
 
 /**@type Object*/
@@ -443,7 +443,11 @@ const fetchMonFromUnionData = (monName) => {
 
 </script>
 
-
+<div id="top">
+    <h1 id="title">SPEC-FERR DRAFTER</h1>
+    <a href="https://github.com/Myshro/specferr" target="_blank">source</a>
+    <a href="https://pokeapi.co/" target="_blank">api</a>
+</div>
 <header>
     <ul class="filters">
         {#if errorThrown}
@@ -462,7 +466,7 @@ const fetchMonFromUnionData = (monName) => {
         {/each}
         <!-- Add more options as needed -->
     </select>
-        <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button>
+    <!-- <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button> -->
     </ul>
     <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"me"} selectedMons={teamOneMonNames}/>
     <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"them"} selectedMons={teamTwoMonNames}/>
@@ -495,6 +499,29 @@ const fetchMonFromUnionData = (monName) => {
 {/if}
 
 <style>
+
+    #top {
+        display: flex;
+        justify-content: left;
+        align-items: center;
+        gap: 3rem;
+    }
+
+    a {
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    a:hover {
+        background-color: black;
+        color: white;
+    }
+
+    #title {
+        font-size: 3rem;
+    }
+
+
     form {
         display: flex;
         flex-direction: column;
