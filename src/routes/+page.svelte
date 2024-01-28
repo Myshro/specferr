@@ -1,17 +1,10 @@
 <script>
 // @ts-nocheck
 
-    /**
-     * - 
-     * - input multiple moves 
-     * - handle invalid input for all filters
-    */
-
 import { stats } from "$lib/stats"
 import PokemonPreview from "$lib/components/PokemonPreview.svelte";
 import FilterBox from "$lib/components/FilterBox.svelte";
 import DraftBox from "$lib/components/DraftBox.svelte";
-// import { filtered } from "$lib/store"
 
 /**@type Object*/
 let res;
@@ -21,16 +14,13 @@ let totalPlayers = 0;
 let url = "https://pokeapi.co/api/v2/pokemon/";
 /**@type string*/
 const BASE_URL = "https://pokeapi.co/api/v2/";
-
-const TEAM_SIZE = 6;
+const TEAM_SIZE = 100000;
 
 let errorThrown = false;
 let invalidInputs = [];
 
 let teamOneMonNames = [];
 let teamTwoMonNames = [];
-
-let currentStat;
 
 const pushNameToTeam1 = (name) => {
     if (teamOneMonNames.length >= TEAM_SIZE || teamOneMonNames.includes(name)) return;
@@ -96,6 +86,8 @@ const STAT = {
 }
 
 const STAT_DATA = stats;
+let currentStat; // current stat to filter by
+let sortedStat = null; // stat to sort by
 
 /**@type Object
  * Contains actual pokemon 
@@ -126,6 +118,14 @@ const filters = {
     name: null,
 }
 
+// $: sortedStat {
+//     if (filtered.union_data.length === 0) return;
+//     filtered.union_data.sort((a, b) => {
+//         return b.stats.find(s => s.stat.name === sortedStat).base_stat - a.stats.find(s => s.stat.name === sortedStat).base_stat;
+//     });
+//     filtered.union_data = filtered.union_data;
+// }
+
 const createUrl = (endpoint, target) => {
     return `${BASE_URL}${endpoint}${target}`;
 }
@@ -154,54 +154,6 @@ const fetchStat = (attribute, min) => {
 
 const printError = (error) => console.log(`FATAL ERROR:\n${error}`);
 
-// const pushTypeFilter = (result) => {
-//     const tf = filtered.type;
-//     result.pokemon.map(p => {
-//         if (!isInFiltered(tf, p.pokemon.name)) {
-//             tf.push(p.pokemon.name);
-//         }
-//     })
-// }
-
-// const pushMoveFilter = (result) => {
-//     const mf = filtered.move;
-//     result.learned_by_pokemon.map(p => {
-//         if (!isInFiltered(mf, p.name)) {
-//             mf.push(p.name);
-//         }
-//     })
-// } 
-
-// const pushAbilityFilter = (result) => {
-//     const af = filtered.ability;
-//     result.pokemon.map(p => {
-//         if (!isInFiltered(af, p.pokemon.name)) {
-//             af.push(p.pokemon.name);
-//         }
-//     })
-// }
-
-// const pushStatFilter = (result) => {
-//     const sf = filtered.stat;
-//     result.map(p => {
-//         if (!isInFiltered(sf, p.name)) {
-//             sf.push(p.name);
-//         }
-//     })
-// }
-
-// const pushFilter = (result, filterType, propertyName) => {
-//     const filterList = filtered[filterType];
-//     result.map(item => {
-//         const itemName = item[propertyName];
-//         if (!isInFiltered(filterList, itemName)) {
-//             filterList.push(itemName);
-//         }
-//     });
-// };
-
-// Example usage:
-
 
 
 // used to make sure dont push same pokemon into the same filtered.X
@@ -216,10 +168,6 @@ const isSharedInFiltered = (pokemonName) => {
         (isEmpty(filtered.type)    || filtered.type.includes(pokemonName)) &&
         (isEmpty(filtered.stat)    || filtered.stat.includes(pokemonName))
     );
-    // return filtered.ability.includes(pokemonName) &&
-    //        filtered.move.includes(pokemonName) &&
-    //        filtered.type.includes(pokemonName) //&&
-    //     //    filtered.stat.includes(pokemonName);
 }
 
 const isEmpty = (arr) => arr.length === 0;
@@ -248,34 +196,6 @@ const clearFiltered = () => {
     filtered.union_name = [];
     filtered.union_data = [];
 }
-
-// const pushTypeFilter = (result) => {
-//     const tf = filtered.type;
-//     result.pokemon.map(p => {
-//         if (!isInFiltered(tf, p.pokemon.name)) {
-//             tf.push(p.pokemon.name);
-//         }
-//     })
-    
-// }
-
-// const pushMoveFilter = (result) => {
-//     const mf = filtered.move;
-//     result.learned_by_pokemon.map(p => {
-//         if (!isInFiltered(mf, p.name)) {
-//             mf.push(p.name);
-//         }
-//     })
-// } 
-
-// const pushAbilityFilter = (result) => {
-//     const af = filtered.ability;
-//     result.pokemon.map(p => {
-//         if (!isInFiltered(af, p.pokemon.name)) {
-//             af.push(p.pokemon.name);
-//         }
-//     })
-// }
 
 const pushStatFilter = (result) => {
     const sf = filtered.stat;
@@ -306,7 +226,6 @@ const pushFilter = (result, filteredTarget, propertyName, pathToName) => {
     result[propertyName].map(mon => {
         tempList.push(Object.byString(mon, pathToName));
     });
-    console.log("2)")
     if (filteredTarget.length === 0) {
         filteredTarget.splice(0, filteredTarget.length, ...tempList); // modify the original array
         console.log(filteredTarget)
@@ -323,6 +242,18 @@ const applyFilters = async () => {
     let result;
     clearFiltered();
 
+    if (filters.name !== null) {
+        const data = await fetchMon(filters.name);
+            if (data === undefined) {
+                errorThrown = true;
+                invalidInputs.push(filters.name);
+                return;
+            }
+        filtered.union_name.push(data.name);
+        filtered.union_data.push(data);
+        return;
+    }
+
     const catchError = (e, filterPath) => {
         printError(e);
         errorThrown = true;
@@ -337,35 +268,16 @@ const applyFilters = async () => {
                     result = await fetchDetail(endpoint, criteria);
                     pushFilter(result, filteredTarget, propertyName, pathToName);
                 }
-                // result = await fetchDetail(ENDPOINT.TYPE, filters.type);
-                // pushTypeFilter(result);
+
             } catch (error) {
                 catchError(error, "type")
             }
         }
     }
 
-    if (filters.name !== null) {
-        // idkman
-    }
-
     await tryFilterFetch(filters.ability, ENDPOINT.ABILITY, filtered.ability, "pokemon", "pokemon.name");
     await tryFilterFetch(filters.type, ENDPOINT.TYPE, filtered.type, "pokemon", "pokemon.name");
     await tryFilterFetch(filters.move, ENDPOINT.MOVE, filtered.move, "learned_by_pokemon", "name");
-
-    // if (filters.type !== null) {
-    //     try {
-    //         for (let i = 0; i < filters.type.length; i++) {
-    //             const criteria = filters.type[i];
-    //             result = await fetchDetail(ENDPOINT.TYPE, criteria);
-    //             pushFilter(result, filters.type, "pokemon", "p.name");
-    //         }
-    //         // result = await fetchDetail(ENDPOINT.TYPE, filters.type);
-    //         // pushTypeFilter(result);
-    //     } catch (error) {
-    //         catchError(error, "type")
-    //     }
-    // }
 
     // if (filters.move !== null) {
     //     try {
@@ -373,15 +285,6 @@ const applyFilters = async () => {
     //         pushMoveFilter(result);
     //     } catch (error) {
     //         catchError(error, "move");
-    //     }
-
-    // }
-    // if (filters.ability !== null) {
-    //     try {
-    //         result = await fetchDetail(ENDPOINT.ABILITY, filters.ability);
-    //         pushAbilityFilter(result);
-    //     } catch (error) {
-    //         catchError(error, "ability");
     //     }
 
     // }
@@ -441,10 +344,11 @@ const fetchMonFromUnionData = (monName) => {
     return null;
 }
 
+
 </script>
 
 <div id="top">
-    <h1 id="title">SPEC-FERR DRAFTER</h1>
+    <h1 id="title">Spec-Ferr Drafter</h1>
     <a href="https://github.com/Myshro/specferr" target="_blank">source</a>
     <a href="https://pokeapi.co/" target="_blank">api</a>
 </div>
@@ -460,12 +364,26 @@ const fetchMonFromUnionData = (monName) => {
             <!-- <FilterBox lable={key.substring(0, 4)} value={val}/> -->
         {/each}
         <label for="flavor">stat:</label>
-    <select id="flavor" name="flavor" bind:value={currentStat} on:change={(event) => currentStat = event.target.value}>
-        {#each Object.entries(STAT) as [key, val]}
-            <option value={val}>{val}</option>
-        {/each}
-        <!-- Add more options as needed -->
-    </select>
+        <select id="flavor" name="flavor" bind:value={currentStat} on:change={(event) => currentStat = event.target.value}>
+            {#each Object.entries(STAT) as [key, val]}
+                <option value={val}>{val}</option>
+            {/each}
+            <!-- Add more options as needed -->
+        </select>
+        <label for="sort-by">sort:</label>
+        <select id="flavor" name="sort-by" bind:value={sortedStat} on:change={(event) => {
+            sortedStat = event.target.value;
+            if (filtered.union_data.length === 0) return;
+            filtered.union_data.sort((a, b) => {
+                return b.stats.find(s => s.stat.name === sortedStat).base_stat - a.stats.find(s => s.stat.name === sortedStat).base_stat;
+            });
+            filtered.union_data = filtered.union_data;
+        }}>
+            {#each Object.entries(STAT) as [key, val]}
+                <option value={val}>{val}</option>
+            {/each}
+            <!-- Add more options as needed -->
+        </select>
     <!-- <button id="clear" on:click|preventDefault={() => {clearFilters(); filtered.union_data=[]}}>Clear</button> -->
     </ul>
     <DraftBox fetchMon={fetchMonFromUnionData} removeMon={removeNameFromTeams} teamName={"me"} selectedMons={teamOneMonNames}/>
@@ -477,16 +395,13 @@ const fetchMonFromUnionData = (monName) => {
     <button type="submit" on:click|preventDefault={applyFiltersAndPopulateData}>Display</button>
 </form>
 
-{#if true}
-    <!-- <pre>
-        {fmt(filtered.union_data)}
-    </pre> -->
     <ul>
         {#each filtered.union_data as { name, sprites, stats, types }}
             <PokemonPreview 
             name={name} sprite={sprites.front_default} 
             stats={stats} types={types} 
-            drafted={teamOneMonNames.includes(name) || teamTwoMonNames.includes(name)}
+            drafted={teamOneMonNames.includes(name)}
+            draftedByEnemy={teamTwoMonNames.includes(name)}
             pushDraftedMon1={pushNameToTeam1} 
             pushDraftedMon2={pushNameToTeam2}
             removeMon={removeNameFromTeams}/>
@@ -495,8 +410,6 @@ const fetchMonFromUnionData = (monName) => {
             No pokemon found / Loading.
         {/if}
     </ul>
-{:else}
-{/if}
 
 <style>
 

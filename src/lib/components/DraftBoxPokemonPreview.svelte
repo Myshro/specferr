@@ -1,3 +1,4 @@
+<!-- This is a component that displays a pokemon's name and a preview of the pokemon. It is used in the DraftBox component. -->
 <script>
 // @ts-nocheck
 

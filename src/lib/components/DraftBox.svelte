@@ -1,7 +1,8 @@
+<!-- This is a component that holds pokemon previews, it is the "me" and "them" boxes in the UI.  -->
 <script>
 // @ts-nocheck
 
-	import DraftBoxPokemonPreview from "./DraftBoxPokemonPreview.svelte";
+import DraftBoxPokemonPreview from "./DraftBoxPokemonPreview.svelte";
 import PokemonPreview from "./PokemonPreview.svelte";
 
     export let selectedMons = [];

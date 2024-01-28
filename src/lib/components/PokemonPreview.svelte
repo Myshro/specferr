@@ -9,13 +9,17 @@
     export let pushDraftedMon2;
     export let removeMon = undefined;
     export let drafted = false;
+    export let draftedByEnemy = false;
     export let disableName = false;
+
+    export let notes;
+    export let points;
 
     const smogonUrl = "https://www.smogon.com/dex/sm/pokemon/"
     
 </script>
 
-<div class="container" class:red={drafted}>
+<div class="container" class:red={drafted} class:blue={draftedByEnemy}>
     {#if !disableName}
       <a target="_blank" href={`${smogonUrl}${name}`} id="name">{name}</a  >
     {/if}
@@ -40,6 +44,7 @@
       <button on:click={() => pushDraftedMon2(name)} id="draft2">them</button>
       <!-- <button on:click={() => removeMon(name)} id="remove">remove</button> -->
     {/if}
+    
 </div>
 
 <style>

@@ -1,3 +1,4 @@
+<!-- This component allows the user to filter pokemon by name, type, ability, move, and stat.  -->
 <script>
 // @ts-nocheck
 
